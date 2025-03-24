@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XIBOT 驗證伺服器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .login-section {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 8px 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0052a3;
+        }
+        .hidden {
+            display: none;
+        }
+        #error, #regError {
+            color: red;
+            margin: 10px 0;
+        }
+        .success-message {
+            color: green;
+            margin: 10px 0;
+        }
+        .key-manager {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .key-list {
+            margin-top: 20px;
+        }
+        .key-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            position: relative;
+        }
+        .admin-header {
+            background: linear-gradient(135deg, #0066cc, #0052a3);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .form-toggle {
+            color: #0066cc;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .session-info {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #0066cc;
+        }
+        .welcome-header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .welcome-header p {
+            color: #666;
+            font-size: 14px;
+        }
+        .system-version {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .admin-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginSection" class="login-section">
+        <div class="welcome-header">
+            <h1>歡迎使用 XIBOT 驗證伺服器</h1>
+            <p>安全可靠的 BOT 驗證服務</p>
+        </div>
+
+        <div id="loginForm">
+            <h2>系統登入</h2>
+            <div class="form-group">
+                <input type="text" id="username" placeholder="用戶名" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="密碼" autocomplete="current-password">
+            </div>
+            <div id="error" class="hidden"></div>
+            <button onclick="login()">登入</button>
+            <span class="form-toggle" onclick="toggleForm('register')">註冊新帳號</span>
+        </div>
+
+        <div id="registerForm" class="hidden">
+            <h2>註冊新帳號</h2>
+            <div class="form-group">
+                <input type="text" id="regUsername" placeholder="用戶名" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="regPassword" placeholder="密碼" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <input type="password" id="confirmPassword" placeholder="確認密碼" autocomplete="new-password">
+            </div>
+            <div id="regError" class="hidden"></div>
+            <div id="regSuccess" class="success-message hidden"></div>
+            <button onclick="register()">註冊</button>
+            <span class="form-toggle" onclick="toggleForm('login')">返回登入</span>
+        </div>
+
+        <div class="system-version">
+            XIBOT 驗證系統 v1.0.0 | 系統時間: 2025-03-24 12:37:06
+        </div>
+    </div>
+
+    <div id="adminPanel" class="container hidden">
+        <div class="sidebar">
+            <div class="admin-header">
+                <h3>XIBOT 管理系統</h3>
+                <p id="adminInfo"></p>
+            </div>
+            <div id="keyManager" class="key-manager">
+                <h4>BOT KEY 管理</h4>
+                <div class="form-group">
+                    <input type="text" id="newKey" placeholder="輸入新的 BOT KEY">
+                </div>
+                <div class="form-group">
+                    <input type="text" id="keyDescription" placeholder="KEY 說明">
+                </div>
+                <div class="form-group">
+                    <select id="keyUserAssign">
+                        <option value="">選擇指派用戶</option>
+                    </select>
+                </div>
+                <button onclick="addNewKey()">新增 KEY</button>
+            </div>
+            <div id="keyList" class="key-list">
+                <!-- KEY列表會動態插入這裡 -->
+            </div>
+        </div>
+        <div class="main-content">
+            <h2>系統總覽</h2>
+            <div id="userData" class="info-box"></div>
+            <div id="sessionInfo" class="session-info"></div>
+            <button onclick="logout()">登出</button>
+        </div>
+    </div>
+
+    <script>
+        const SYSTEM_TIME = "2025-03-24 12:37:06";
+        const SYSTEM_NAME = "XIBOT 驗證系統";
+        const SYSTEM_VERSION = "1.0.0";
+        const ADMIN_USERNAME = "billxiaobai";
+        const ADMIN_PASSWORD = "key123";
+
+        // 初始化用戶數據
+        let users = JSON.parse(localStorage.getItem('users') || '[]');
+        let keys = JSON.parse(localStorage.getItem('botKeys') || '[]').map(key => ({
+            ...key,
+            assignedTo: key.assignedTo || []
+        }));
+
+        // 確保管理員帳號存在
+        if (!users.some(u => u.username === ADMIN_USERNAME)) {
+            users.push({
+                username: ADMIN_USERNAME,
+                password: ADMIN_PASSWORD,
+                isAdmin: true,
+                createdAt: SYSTEM_TIME
+            });
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        // 更新用戶列表
+        function updateUserList() {
+            const userSelect = document.getElementById('keyUserAssign');
+            userSelect.innerHTML = '<option value="">選擇指派用戶</option>';
+            
+            users.forEach(user => {
+                if (!user.isAdmin) {
+                    const option = document.createElement('option');
+                    option.value = user.username;
+                    option.textContent = user.username;
+                    userSelect.appendChild(option);
+                }
+            });
+        }
+
+        // 頁面加載時檢查 URL 參數
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const auth = urlParams.get('auth');
+            
+            if (auth) {
+                try {
+                    const decoded = atob(auth);
+                    const [username, password, loginTime, sessionId] = decoded.split(':');
+                    
+                    const user = users.find(u => u.username === username);
+                    if (user) {
+                        showAdminPanel(username, loginTime, sessionId, user.isAdmin);
+                    }
+                    
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (e) {
+                    console.error('自動登入失敗:', e);
+                    showError('登入失敗');
+                }
+            }
+            updateKeyList();
+        };
+
+        function toggleForm(form) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const error = document.getElementById('error');
+            const regError = document.getElementById('regError');
+            const regSuccess = document.getElementById('regSuccess');
+
+            error.classList.add('hidden');
+            regError.classList.add('hidden');
+            regSuccess.classList.add('hidden');
+
+            if (form === 'register') {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+            } else {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            }
+        }
+
+        function register() {
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!username || !password || !confirmPassword) {
+                showRegError('所有欄位都必須填寫');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showRegError('密碼不匹配');
+                return;
+            }
+
+            if (users.some(u => u.username === username)) {
+                showRegError('用戶名已存在');
+                return;
+            }
+
+            users.push({
+                username: username,
+                password: password,
+                isAdmin: false,
+                createdAt: SYSTEM_TIME
+            });
+            localStorage.setItem('users', JSON.stringify(users));
+
+            const regSuccess = document.getElementById('regSuccess');
+            regSuccess.textContent = '註冊成功！3秒後返回登入頁面。';
+            regSuccess.classList.remove('hidden');
+
+            setTimeout(() => {
+                toggleForm('login');
+            }, 3000);
+        }
+
+        function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                const sessionId = generateSessionId();
+                showAdminPanel(username, SYSTEM_TIME, sessionId, user.isAdmin);
+            } else {
+                showError('帳號或密碼錯誤');
+            }
+        }
+
+        function generateSessionId() {
+            return Math.random().toString(36).substring(2);
+        }
+
+        function showAdminPanel(username, loginTime, sessionId, isAdmin) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            
+            document.getElementById('adminInfo').innerHTML = `
+                登入身份: ${username}
+                ${isAdmin ? '(系統管理員)' : '(一般用戶)'}
+            `;
+
+            document.getElementById('userData').innerHTML = `
+                <p><strong>用戶名:</strong> ${username}</p>
+                <p><strong>登入時間:</strong> ${loginTime}</p>
+                <p><strong>會話ID:</strong> ${sessionId}</p>
+                <p><strong>帳戶類型:</strong> ${isAdmin ? '系統管理員' : '一般用戶'}</p>
+                <p><strong>系統版本:</strong> ${SYSTEM_NAME} ${SYSTEM_VERSION}</p>
+            `;
+            
+            document.getElementById('keyManager').style.display = isAdmin ? 'block' : 'none';
+            
+            if (isAdmin) {
+                updateUserList();
+            }
+            
+            updateSessionInfo(loginTime);
+            updateKeyList();
+        }
+
+        function addNewKey() {
+            const keyInput = document.getElementById('newKey');
+            const descInput = document.getElementById('keyDescription');
+            const userSelect = document.getElementById('keyUserAssign');
+            
+            const key = keyInput.value.trim();
+            const description = descInput.value.trim();
+            const assignedUser = userSelect.value;
+            
+            if (!key || !description || !assignedUser) {
+                alert('請填寫所有欄位！');
+                return;
+            }
+            
+            keys.push({
+                key: key,
+                description: description,
+                createdAt: SYSTEM_TIME,
+                createdBy: ADMIN_USERNAME,
+                assignedTo: assignedUser
+            });
+            
+            localStorage.setItem('botKeys', JSON.stringify(keys));
+            
+            keyInput.value = '';
+            descInput.value = '';
+            userSelect.value = '';
+            
+            updateKeyList();
+        }
+
+        function deleteKey(index) {
+            keys.splice(index, 1);
+            localStorage.setItem('botKeys', JSON.stringify(keys));
+            updateKeyList();
+        }
+
+        function updateKeyList() {
+            const keyList = document.getElementById('keyList');
+            keyList.innerHTML = '<h4>現有 KEY 列表</h4>';
+            
+            const currentUser = document.getElementById('adminInfo').textContent.includes('管理員') 
+                ? null 
+                : document.getElementById('adminInfo').textContent.split(':')[1].trim().split('(')[0].trim();
+            
+            keys.forEach((key, index) => {
+                if (currentUser && key.assignedTo !== currentUser) {
+                    return;
+                }
+                
+                const keyElement = document.createElement('div');
+                keyElement.className = 'key-item';
+                keyElement.innerHTML = `
+                    <strong>KEY:</strong> ${key.key}<br>
+                    <strong>說明:</strong> ${key.description}<br>
+                    <strong>建立時間:</strong> ${key.createdAt}<br>
+                    <strong>建立者:</strong> ${key.createdBy}<br>
+                    <strong>指派給:</strong> ${key.assignedTo}<br>
+                    ${currentUser ? '' : `<button class="delete-btn" onclick="deleteKey(${index})">刪除</button>`}
+                `;
+                keyList.appendChild(keyElement);
+            });
+        }
+
+        function updateSessionInfo(loginTime) {
+            const sessionInfo = document.getElementById('sessionInfo');
+            sessionInfo.innerHTML = `
+                <p><strong>系統時間:</strong> ${SYSTEM_TIME}</p>
+                <p><strong>登入時間:</strong> ${loginTime}</p>
+            `;
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        function showRegError(message) {
+            const regError = document.getElementById('regError');
+            regError.textContent = message;
+            regError.classList.remove('hidden');
+        }
+
+        function logout() {
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+    </script>
+</body>
+</html>
